@@ -26,7 +26,7 @@
   ],
   "contributions": [
     {
-      "id": "rm-summary-section-space",
+      "id": "deployment-summary-section-space",
       "type": "ms.vss-releaseManagement-web.release-summary-section",
       "targets": [ "ms.vss-releaseManagement-web.release-details-summary-tab" ],
       "properties": {
