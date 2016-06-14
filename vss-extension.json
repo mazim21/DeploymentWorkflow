@@ -12,7 +12,7 @@
     }
   },
   "icons": {
-        "default": "images/export-import.jpg"
+        "default": "images/workflowIcon.jpg"
     },
   "content": {
         "details": {
@@ -26,7 +26,7 @@
   ],
   "contributions": [
     {
-      "id": "rm-summary-section-sample",
+      "id": "rm-summary-section-space",
       "type": "ms.vss-releaseManagement-web.release-summary-section",
       "targets": [ "ms.vss-releaseManagement-web.release-details-summary-tab" ],
       "properties": {
@@ -36,7 +36,7 @@
       }
     },
     {
-      "id": "rm-tab-sample",
+      "id": "rm-tab-space",
       "type": "ms.vss-releaseManagement-web.release-summary-tab",
       "targets": [ "ms.vss-releaseManagement-web.release-details-view" ],
       "properties": {
