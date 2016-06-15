@@ -12,7 +12,11 @@
     }
   },
   "icons": {
+<<<<<<< HEAD
         "default": "images/workflowIcon.jpg"
+=======
+        "default": "images/workflowIcon.jpg"
+>>>>>>> 66bb7481f50818662bdfbf624edac794ea78e81f
     },
   "content": {
         "details": {
@@ -26,7 +30,11 @@
   ],
   "contributions": [
     {
+<<<<<<< HEAD
+      "id": "deployment-summary-section-space",
+=======
      "id": "rm-summary-section-space", 
+>>>>>>> 66bb7481f50818662bdfbf624edac794ea78e81f
       "type": "ms.vss-releaseManagement-web.release-summary-section",
       "targets": [ "ms.vss-releaseManagement-web.release-details-summary-tab" ],
       "properties": {
@@ -36,7 +44,11 @@
       }
     },
     {
+<<<<<<< HEAD
+      "id": "rm-tab-space",
+=======
       "id": "rm-tab-space", 
+>>>>>>> 66bb7481f50818662bdfbf624edac794ea78e81f
       "type": "ms.vss-releaseManagement-web.release-summary-tab",
       "targets": [ "ms.vss-releaseManagement-web.release-details-view" ],
       "properties": {
