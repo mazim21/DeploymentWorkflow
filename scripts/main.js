@@ -25,7 +25,6 @@ function CreateReleaseStartedNode() {
     });
     $('#environments').append(startNode);
 
-
 }
 
 
@@ -148,7 +147,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 //Calculating Level of current Environment and storing Dependencies
 
                 while (dependencyCount < env.conditions.length) {
-                    dependencies[dependencyIndex] = env.conditions[dependencyCount].name;
+                    dependencies[dependencyIndex] = (env.conditions[dependencyCount].name).replace(/\s+/g, '');
 
                     if (env.conditions[0].name == "ReleaseStarted")
                         levelOfEnvironment = 1;
@@ -325,7 +324,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 //Creating a container that stores all the above three nodes
                 var current = $('<div/>', {
-                    id: env.name,
+                    id: (env.name).replace(/\s+/g, ''),
                     class: 'container '
 
                 });
@@ -334,14 +333,14 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 try {
                     if (env.preApprovalsSnapshot.approvals[0].isAutomated == false)
-                        $('#' + env.name).append(preApprovalNode);
+                        $('#' + env.name.replace(/\s+/g, '')).append(preApprovalNode);
                 }
                 catch (e) {
                     alert('excep_pre' + env.name);
                 }
 
                 try {
-                    $('#' + env.name).append(EnvNode);
+                    $('#' + env.name.replace(/\s+/g, '')).append(EnvNode);
                 }
                 catch (e) {
                     alert('excep_envnode' + env.name);
@@ -349,14 +348,14 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 try {
                     if (env.postApprovalsSnapshot.approvals[0].isAutomated == false)
-                        $('#' + env.name).append(postApprovalNode);
+                        $('#' + env.name.replace(/\s+/g, '')).append(postApprovalNode);
                 }
                 catch (e) {
                     alert('excep_post' + env.name);
                 }
 
                 //Creating the Object of current Environment
-                const releasedEnvironmentObject = new releasedEnvironment(env.name, env.id, dependencies, preapproval_list, postapproval_list, levelOfEnvironment);
+                const releasedEnvironmentObject = new releasedEnvironment((env.name).replace(/\s+/g, ''), env.id, dependencies, preapproval_list, postapproval_list, levelOfEnvironment);
 
                 ReleasedEnvironments[totalNoOfReleasedEnvironments] = releasedEnvironmentObject;
 
@@ -412,6 +411,8 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                         EnvironmentInformation = EnvironmentInformation + "Release: " + release_name + "<br>";
                         document.getElementById('details').innerHTML = EnvironmentInformation;
+                        var offset = $("#" + this.id).offset();
+                        $("#details").offset({ top: offset.top + 10, left: offset.left });
                         break;
                     }
                 }
