@@ -40,7 +40,8 @@
       "properties": {
         "name": "Deployment Status",
         "uri": "index.html",
-        "order": "99"
+        "order": "99",
+        "height":  "800px",
       }
     },
     {

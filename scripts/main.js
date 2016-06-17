@@ -46,7 +46,7 @@ function DrawGraph() {
     var releasedEnvironmentCount = 0, levelOfEnvironment = 1;
     var offsetOnLevels = 806.14 / maxLevelNumber;
     var shiftTop = 30, shiftLeft = offsetOnLevels / 2;               //shiftTop is the offset used to place the environments on the same level one below the other;
-                       
+
     //shiftLeft is the offset used to shift to the next level; 
 
     while (releasedEnvironmentCount < totalNoOfReleasedEnvironments) {
@@ -87,28 +87,24 @@ function ConnectNodes() {
                endpoint: endpointType
            };
 
-        while (releasedEnvironmentCount < totalNoOfReleasedEnvironments)
-        {
+        while (releasedEnvironmentCount < totalNoOfReleasedEnvironments) {
             var dependencyCount = 0;
-            
-            if (ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount] != "ReleaseStarted" && ReleasedEnvironments[releasedEnvironmentCount].dependencies.length != 0)
-            {  //Check if the environment is not on the first level
-                while (dependencyCount < ReleasedEnvironments[releasedEnvironmentCount].dependencies.length)
-                {
-                         jsPlumb.connect({
-                                source: ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount],      // Creates a connection between the current environment
-                                target: ReleasedEnvironments[releasedEnvironmentCount].name,                               // and the environments that it depends upon
-                                paintStyle: { strokeStyle: connectorColor, lineWidth: 3 },
-                                hoverPaintStyle: { strokeStyle: "blue" },
-                                endpointStyle: { fillStyle: connectorColor, outlineColor: endpointOutlineColor }
+
+            if (ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount] != "ReleaseStarted" && ReleasedEnvironments[releasedEnvironmentCount].dependencies.length != 0) {  //Check if the environment is not on the first level
+                while (dependencyCount < ReleasedEnvironments[releasedEnvironmentCount].dependencies.length) {
+                    jsPlumb.connect({
+                        source: ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount],      // Creates a connection between the current environment
+                        target: ReleasedEnvironments[releasedEnvironmentCount].name,                               // and the environments that it depends upon
+                        paintStyle: { strokeStyle: connectorColor, lineWidth: 3 },
+                        hoverPaintStyle: { strokeStyle: "blue" },
+                        endpointStyle: { fillStyle: connectorColor, outlineColor: endpointOutlineColor }
 
                     }, common);
                     dependencyCount++;
                 }
 
             }
-            else
-            {                                                                                                  //Connnect the ReleaseStarted node to the environments on the first level
+            else {                                                                                                  //Connnect the ReleaseStarted node to the environments on the first level
                 jsPlumb.connect({
                     source: "start",
                     target: ReleasedEnvironments[releasedEnvironmentCount].name,
@@ -117,8 +113,8 @@ function ConnectNodes() {
                     endpointStyle: { fillStyle: connectorColor, outlineColor: endpointOutlineColor }
 
                 }, common);
-           }
-            
+            }
+
             releasedEnvironmentCount++;
         }  //End of while
 
@@ -154,26 +150,25 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 while (dependencyCount < env.conditions.length) {
                     dependencies[dependencyIndex] = env.conditions[dependencyCount].name;
 
-                    if (env.conditions[0].name == "ReleaseStarted" ) 
+                    if (env.conditions[0].name == "ReleaseStarted")
                         levelOfEnvironment = 1;
-                    
-                    else 
+
+                    else
                         CalculateLevel(dependencies[dependencyIndex]);
-                    
+
 
                     dependencyIndex++;
                     dependencyCount++;
                 }
-                    
-                try{
-                        if (env.conditions[0].name == "ReleaseStarted" || env.conditions.length == 0)
-                            levelOfEnvironment = 1;
-                        else
-                            levelOfEnvironment = levelOfEnvironment + 1;
-                   }   
-                catch(e)
-                {
-                    levelOfEnvironment = 1;
+
+                try {
+                    if (env.conditions[0].name == "ReleaseStarted" || env.conditions.length == 0)
+                        levelOfEnvironment = 1;
+                    else
+                        levelOfEnvironment = levelOfEnvironment + 1;
+                }
+                catch (e) {
+                    levelOfEnvironment = 1;                              //Throw exception if manual deployment
                 }
 
                 var countOFApprovers = 0;
@@ -209,7 +204,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                     case RM_Contracts.EnvironmentStatus.InProgress:
                         state += 'In Progress';
                         status = 'running';
-                        
+
                         break;
                     case RM_Contracts.EnvironmentStatus.Succeeded:
                         state += 'Succeeded';
@@ -240,35 +235,71 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 var preApprovalNodeId = "pre" + env.id;
                 var postApprovalNodeId = "pos" + env.id;
-                
-                try{
-                    if ((typeof env.preDeployApprovals[0].approvedBy == "undefined" && preapproval_list.length != 0) ) 
-                        preApprovalStatus = 'pending'; 
-                    else
-                        preApprovalStatus = 'succeeded';
-                   }
-                catch(e)
-                {
-                    preApprovalStatus = 'pending';
+
+                try {
+                    if (preapproval_list.length != 0) {
+                        var ApprovalsNotReceived = 0;
+
+                        if (env.preDeployApprovals.length != 0) {
+                            for (var preDeployApprover in env.preDeployApprovals) {
+                                if (typeof env.preDeployApprovals[preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                    ApprovalsNotReceived++;
+                            }
+
+                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preDeployApprovals.length) {
+                                preApprovalStatus = 'succeeded';
+                            }
+                            else if (ApprovalsNotReceived > 0) {
+                                preApprovalStatus = 'notStarted';
+                                status = 'notStarted';
+                            }
+                            else
+                                preApprovalStatus = 'succeeded';
+
+                        }
+                        else {
+                            preApprovalStatus = 'notStarted';
+                            status = 'notStarted';
+                        }
+
+                    }
+
+                }
+                catch (e) {
+                    preApprovalStatus = 'notStarted';
                 }
 
-                try{
-                        if (typeof env.postDeployApprovals[0].approvedBy == "undefined")
-                        {
-                            if( postapproval_list.length != 0 )
-                                postApprovalStatus = 'pending';
+
+                try {
+                    if (postapproval_list.length != 0) {
+                        var ApprovalsNotReceived = 0;
+
+                        if (env.postDeployApprovals.length != 0) {
+                            for (var postDeployApprover in env.postDeployApprovals) {
+                                if (typeof env.postDeployApprovals[postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                    ApprovalsNotReceived++;
+                            }
+
+                            if (env.postApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.postDeployApprovals.length)
+                                postApprovalStatus = 'succeeded';
+
+                            else if (ApprovalsNotReceived > 0)
+                                postApprovalStatus = 'notStarted';
+
                             else
                                 postApprovalStatus = 'succeeded';
+
                         }
-                    else
-                        postApprovalStatus = 'succeeded';
-                        
+                        else
+                            postApprovalStatus = 'notStarted';
+
                     }
-                catch (e)
-                {
-                    postApprovalStatus = 'pending';
+
                 }
-                   
+                catch (e) {
+                    postApprovalStatus = 'notStarted';
+                }
+
 
 
                 //Creating Node for preApproval
@@ -301,32 +332,26 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 $('#environments').append(current);
 
-                try
-                {
+                try {
                     if (env.preApprovalsSnapshot.approvals[0].isAutomated == false)
                         $('#' + env.name).append(preApprovalNode);
                 }
-                catch(e)
-                {
+                catch (e) {
                     alert('excep_pre' + env.name);
                 }
 
-                try
-                {
+                try {
                     $('#' + env.name).append(EnvNode);
                 }
-                catch(e)
-                {
+                catch (e) {
                     alert('excep_envnode' + env.name);
                 }
 
-                try
-                {
+                try {
                     if (env.postApprovalsSnapshot.approvals[0].isAutomated == false)
                         $('#' + env.name).append(postApprovalNode);
                 }
-                catch (e)
-                {
+                catch (e) {
                     alert('excep_post' + env.name);
                 }
 
@@ -344,7 +369,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
             }); //End of ForEach
 
 
-            
+
             //Creating Graph Level Wise
             DrawGraph();
 
@@ -372,7 +397,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         EnvironmentInformation = EnvironmentInformation + releasedEnvironment.name + "<br>" + "PreApprover: ";
                         if (releasedEnvironment.preapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.preapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver];
+                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver] + " ";
                             }
                         }
 
@@ -380,7 +405,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                         if (releasedEnvironment.postapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.postapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver];
+                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver] + " ";
                             }
                         }
                         EnvironmentInformation = EnvironmentInformation + "<br>";
@@ -429,7 +454,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 }
             });
 
-           
+
             ConnectNodes();           //Connecting nodes using Jsplumb connect function
 
         }); //End of onReleaseChanged
