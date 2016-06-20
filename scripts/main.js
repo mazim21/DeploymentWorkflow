@@ -122,6 +122,17 @@ function ConnectNodes() {
 
 }
 
+/*function RemovePreAndPostAprrovalInformation(EnvironmentId)
+{
+    for (var environment in ReleasedEnvironments) {
+        if (EnvironmentId == ReleasedEnvironments[environment].id) {
+            preapproval_list = preapproval_list.splice(0, preapproval_list.length);
+            postapproval_list = preapproval_list.splice(0, preapproval_list.length);
+        }
+    }
+
+}
+*/
 VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
     VSS.ready(function () {
@@ -374,15 +385,102 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
             //Context menu popup on right-clicking on the container 
             $(function () {
-                $('.container').contextPopup({
+                var EnvironmentId = [0];
+                $('.environment').contextPopup({
+
                     items: [
-                      { label: 'Deploy', action: function () { alert('Deployed') } },
-                      { label: 'Cancel', action: function () { alert('Cancelled') } },
-                      { label: 'Re-Deploy', action: function () { alert('Re-Deploying') } }
+                      {
+                          label: 'Deploy', action: function () {
+                              "use strict";
+
+                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
+                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
+                                    var vsoContext = VSS.getWebContext();
+                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
+                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
+
+                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
+                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+
+                                        environmentUpdateData.comment = "Deploying";
+                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
+                                        }, function (error) {
+                                            alert("error");
+                                        });
+
+                                    }, function (error) {
+                                        alert("error");
+                                    });
+                                });
+
+
+                          }
+                      },
+                      {
+                          label: 'Cancel', action: function () {
+
+                              "use strict";
+
+                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
+                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
+                                    var vsoContext = VSS.getWebContext();
+                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
+                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
+
+                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
+                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.Canceled;
+
+                                        environmentUpdateData.comment = "Cancelling";
+                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
+                                            RemovePreAndPostAprrovalInformation(EnvironmentId[0]);
+                                        }, function (error) {
+                                            alert("error");
+                                        });
+
+
+
+                                    }, function (error) {
+                                        alert("error");
+                                    });
+                                });
+                          }
+                      },
+                      {
+                          label: 'Re-Deploy', action: function () {
+                              "use strict";
+
+                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
+                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
+                                    var vsoContext = VSS.getWebContext();
+                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
+                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
+
+                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
+                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+                                        environmentUpdateData.comment = "Re-Deploying";
+                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
+                                        }, function (error) {
+                                            alert("error");
+                                        });
+
+
+
+                                    }, function (error) {
+                                        alert("error");
+                                    });
+                                });
+
+
+
+
+
+                          }
+                      }
                     ]
-                });
+                }, EnvironmentId);
 
             });
+
 
 
             //Hover Function
