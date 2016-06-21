@@ -19,10 +19,8 @@
 
     <style>
         #environments {
-            
             overflow: visible;
             margin-top: 30px;
-            
         }
 
         #start {
@@ -32,15 +30,30 @@
             border-radius: 15px;
         }
 
-        #details {
+        /*#details {
             display: inline-block;
             overflow: visible;
             position: relative;
             background-color: white;
             box-shadow: 1px 1px;
             margin-bottom:5px;
+        }*/
+
+        #details {
+            display: inline-block;
+            overflow: visible;
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            text-align: justify;
+            -o-text-overflow: ellipsis;
+            text-overflow: ellipsis;
+            background: rgb(255,255,255);
+            -webkit-box-shadow: 1px 1px 1px 0 rgba(0,0,0,0.3);
+            box-shadow: 1px 1px 1px 0 rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
         }
-         
+
 
         .environment {
             width: 30px;
@@ -52,13 +65,14 @@
             border: 2px solid black;
             background-color: #008B8B;
             margin-right: 2px;
-            text-align:left;
+            text-align: left;
         }
 
         .container {
             margin-bottom: 20px;
             display: inline-block;
         }
+
 
         .preApproval {
             width: 15px;
@@ -87,7 +101,7 @@
         }
 
         .pending {
-            background-color: #ADD8E6;
+            background-color: grey;
         }
 
         .running {

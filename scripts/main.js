@@ -70,6 +70,44 @@ function DrawGraph() {
     }
 }
 
+function ContextMenuOptions(Label, ReleaseId, EnvironmentId) {
+    "use strict";
+
+    VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
+      function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
+          var vsoContext = VSS.getWebContext();
+          var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
+          rmClient.getReleaseEnvironment(vsoContext.project.id, ReleaseId, EnvironmentId).then(function (Environment) {
+
+              var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
+              switch (Label) {
+                  case 'Deploy':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+                      environmentUpdateData.comment = "Deploying";
+                      break;
+                  case 'Cancel':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.Canceled;
+                      environmentUpdateData.comment = "Canceling";
+                      break
+                  case 'Re-Deploy':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+                      environmentUpdateData.comment = "Re-Deploying";
+                      break;
+              }
+
+              rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, ReleaseId, EnvironmentId).then(() => {
+
+              }, function (error) {
+                  alert("error");
+              });
+
+          }, function (error) {
+              alert("error");
+          });
+      });
+}
+
+
 //Draws the connections between the Environments using jsPlumb
 function ConnectNodes() {
     jsPlumb.ready(function () {
@@ -122,17 +160,6 @@ function ConnectNodes() {
 
 }
 
-/*function RemovePreAndPostAprrovalInformation(EnvironmentId)
-{
-    for (var environment in ReleasedEnvironments) {
-        if (EnvironmentId == ReleasedEnvironments[environment].id) {
-            preapproval_list = preapproval_list.splice(0, preapproval_list.length);
-            postapproval_list = preapproval_list.splice(0, preapproval_list.length);
-        }
-    }
-
-}
-*/
 VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
     VSS.ready(function () {
@@ -165,7 +192,6 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                     else
                         CalculateLevel(dependencies[dependencyIndex]);
-
 
                     dependencyIndex++;
                     dependencyCount++;
@@ -243,6 +269,8 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         state += 'Unknown';
                 };
 
+
+
                 var preApprovalNodeId = "pre" + env.id;
                 var postApprovalNodeId = "pos" + env.id;
 
@@ -250,27 +278,36 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                     if (preapproval_list.length != 0) {
                         var ApprovalsNotReceived = 0;
 
-                        if (env.preDeployApprovals.length != 0) {
+                        if (env.preDeployApprovals.length != 0 && env.status != RM_Contracts.EnvironmentStatus.Queued) {
+                            var latestAttempt = env.preDeployApprovals[env.preDeployApprovals.length - 1].attempt;
+
                             for (var preDeployApprover in env.preDeployApprovals) {
-                                if (typeof env.preDeployApprovals[preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-                                    ApprovalsNotReceived++;
+                                if (env.preDeployApprovals[env.preDeployApprovals.length - 1 - preDeployApprover].attempt == latestAttempt) {
+                                    if (typeof env.preDeployApprovals[env.preDeployApprovals.length - 1 - preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                    {
+                                        ApprovalsNotReceived++;
+                                    }
+                                }
+                                else
+                                    break;
                             }
 
-                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preDeployApprovals.length) {
+                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preApprovalsSnapshot.approvals.length) {
                                 preApprovalStatus = 'succeeded';
                             }
-                            else if (ApprovalsNotReceived > 0) {
-                                preApprovalStatus = 'notStarted';
-                                status = 'notStarted';
+                            else {
+                                if (ApprovalsNotReceived > 0) {
+                                    preApprovalStatus = 'notStarted';
+                                    if (status != 'failed')
+                                        status = 'pending';
+                                }
+                                else
+                                    preApprovalStatus = 'succeeded';
                             }
-                            else
-                                preApprovalStatus = 'succeeded';
 
                         }
-                        else {
+                        else
                             preApprovalStatus = 'notStarted';
-                            status = 'notStarted';
-                        }
 
                     }
 
@@ -282,15 +319,23 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 try {
                     if (postapproval_list.length != 0) {
+
+
                         var ApprovalsNotReceived = 0;
 
                         if (env.postDeployApprovals.length != 0) {
-                            for (var postDeployApprover in env.postDeployApprovals) {
-                                if (typeof env.postDeployApprovals[postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-                                    ApprovalsNotReceived++;
-                            }
+                            var latestAttempt = env.postDeployApprovals[env.postDeployApprovals.length - 1].attempt;
 
-                            if (env.postApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.postDeployApprovals.length)
+                            for (var postDeployApprover in env.postDeployApprovals) {
+                                if (typeof env.postDeployApprovals[env.postDeployApprovals.length - 1 - postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                {
+                                    if (env.postDeployApprovals[env.postDeployApprovals.length - 1 - postDeployApprover].attempt == latestAttempt)
+                                        ApprovalsNotReceived++;
+                                    else
+                                        break;
+                                }
+                            }
+                            if (env.postApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.postApprovalsSnapshot.approvals.length)
                                 postApprovalStatus = 'succeeded';
 
                             else if (ApprovalsNotReceived > 0)
@@ -384,97 +429,20 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
             DrawGraph();
 
             //Context menu popup on right-clicking on the container 
+
             $(function () {
                 var EnvironmentId = [0];
                 $('.environment').contextPopup({
 
                     items: [
                       {
-                          label: 'Deploy', action: function () {
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
-
-                                        environmentUpdateData.comment = "Deploying";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-
-
-                          }
+                          label: 'Deploy', action: function () { ContextMenuOptions('Deploy', release.id, EnvironmentId[0]); }
                       },
                       {
-                          label: 'Cancel', action: function () {
-
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.Canceled;
-
-                                        environmentUpdateData.comment = "Cancelling";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                            RemovePreAndPostAprrovalInformation(EnvironmentId[0]);
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-                          }
+                          label: 'Cancel', action: function () { ContextMenuOptions('Cancel', release.id, EnvironmentId[0]); }
                       },
                       {
-                          label: 'Re-Deploy', action: function () {
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
-                                        environmentUpdateData.comment = "Re-Deploying";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-
-
-
-
-
-                          }
+                          label: 'Re-Deploy', action: function () { ContextMenuOptions('Re-Deploy', release.id, EnvironmentId[0]); }
                       }
                     ]
                 }, EnvironmentId);
@@ -484,7 +452,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
 
             //Hover Function
-            $('.environment').hover(function () {
+            $('.environment').hover(function (e) {
                 for (var releasedEnvironmentIndex in ReleasedEnvironments) {
                     var releasedEnvironment = ReleasedEnvironments[releasedEnvironmentIndex];
 
@@ -494,7 +462,9 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         EnvironmentInformation = EnvironmentInformation + releasedEnvironment.name + "<br>" + "PreApprover: ";
                         if (releasedEnvironment.preapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.preapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver] + " ";
+                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver];
+                                if (approver != releasedEnvironment.preapproval_list.length - 1)
+                                    EnvironmentInformation += ', ';
                             }
                         }
 
@@ -502,20 +472,33 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                         if (releasedEnvironment.postapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.postapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver] + " ";
+                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver];
+                                if (approver != releasedEnvironment.postapproval_list.length - 1)
+                                    EnvironmentInformation += ', ';
                             }
                         }
                         EnvironmentInformation = EnvironmentInformation + "<br>";
 
                         EnvironmentInformation = EnvironmentInformation + "Release: " + release_name + "<br>";
                         document.getElementById('details').innerHTML = EnvironmentInformation;
-                        var offset = $("#" + this.id).offset();
-                        $("#details").offset({ top: offset.top + 10, left: offset.left });
+
+                        var left = e.pageX + 5, /* nudge to the right, so the pointer is covering the title */
+                         top = e.pageY;
+                        if (top + $("#details").height() >= $(window).height()) {
+                            top -= $("#details").height();
+                        }
+                        if (left + $("#details").width() >= $(window).width()) {
+                            left -= $("#details").width();
+                        }
+                        // Create and show menu
+                        $("#details").css({ zIndex: 1000001, left: left, top: top, padding: "5px", display: "inline-block" });
+
                         break;
                     }
                 }
             },
               function () {
+                  $("#details").css({ display: "none" });
                   document.getElementById('details').innerHTML = " ";
               });
 
