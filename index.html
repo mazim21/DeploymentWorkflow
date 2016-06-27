@@ -7,6 +7,7 @@
     <script src="scripts/main.js"></script>
     <script type="text/javascript">VSS.notifyLoadSucceeded();</script>
 
+
     <script src="scripts/jsPlumb/jquery.min.js"></script>
 
     <script src="scripts/jsPlumb/jquery-ui.min.js"></script>
@@ -35,10 +36,17 @@
         #details {
             display: inline-block;
             overflow: visible;
-            position: relative;
-            background-color: white;
-            box-shadow: 1px 1px;
-            margin-bottom:5px;
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            text-align: justify;
+             -o-text-overflow: ellipsis;
+             text-overflow: ellipsis;
+              background: rgb(255,255,255);
+             -webkit-box-shadow: 1px 1px 1px 0 rgba(0,0,0,0.3) ;
+              box-shadow: 1px 3px 1px 0 rgba(0,0,0,0.3) ;
+             text-shadow: 1px 1px 1px rgba(0,0,0,0.2) ;
+             border: 1px solid lightgrey;
         }
          
 
@@ -51,15 +59,23 @@
             color: blue;
             border: 2px solid black;
             background-color: #008B8B;
-            margin-right: 2px;
             text-align:left;
         }
-
+        
         .container {
             margin-bottom: 20px;
             display: inline-block;
-        }
+            border: 2px solid white;
+            
+            }
+          
+          .container:hover {
+                          border-color:#59b2c2;
+                background-color:#59b2c2;
+               
+            }
 
+         
         .preApproval {
             width: 15px;
             height: 15px;
@@ -87,7 +103,7 @@
         }
 
         .pending {
-            background-color: #ADD8E6;
+            background-color: grey;
         }
 
         .running {

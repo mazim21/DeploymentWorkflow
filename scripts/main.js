@@ -44,7 +44,7 @@ function CalculateLevel(dependency) {
 function DrawGraph() {
     var releasedEnvironmentCount = 0, levelOfEnvironment = 1;
     var offsetOnLevels = 806.14 / maxLevelNumber;
-    var shiftTop = 30, shiftLeft = offsetOnLevels / 2;               //shiftTop is the offset used to place the environments on the same level one below the other;
+    var shiftTop = 28, shiftLeft = offsetOnLevels / 2;               //shiftTop is the offset used to place the environments on the same level one below the other;
 
     //shiftLeft is the offset used to shift to the next level; 
 
@@ -64,11 +64,49 @@ function DrawGraph() {
             }
         }
         shiftLeft += offsetOnLevels;                                      //Shift to the next level
-        shiftTop = 30;
+        shiftTop = 28;
         levelOfEnvironment++;
 
     }
 }
+
+function ContextMenuOptions(Label, ReleaseId, EnvironmentId) {
+    "use strict";
+
+    VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
+      function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
+          var vsoContext = VSS.getWebContext();
+          var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
+          rmClient.getReleaseEnvironment(vsoContext.project.id, ReleaseId, EnvironmentId).then(function (Environment) {
+
+              var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
+              switch (Label) {
+                  case 'Deploy':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+                      environmentUpdateData.comment = "Deploying";
+                      break;
+                  case 'Cancel':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.Canceled;
+                      environmentUpdateData.comment = "Canceling";
+                      break
+                  case 'Re-Deploy':
+                      environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
+                      environmentUpdateData.comment = "Re-Deploying";
+                      break;
+              }
+
+              rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, ReleaseId, EnvironmentId).then(() => {
+
+              }, function (error) {
+                  alert("error");
+              });
+
+          }, function (error) {
+              alert("error");
+          });
+      });
+}
+
 
 //Draws the connections between the Environments using jsPlumb
 function ConnectNodes() {
@@ -91,6 +129,7 @@ function ConnectNodes() {
 
             if (ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount] != "ReleaseStarted" && ReleasedEnvironments[releasedEnvironmentCount].dependencies.length != 0) {  //Check if the environment is not on the first level
                 while (dependencyCount < ReleasedEnvironments[releasedEnvironmentCount].dependencies.length) {
+                  
                     jsPlumb.connect({
                         source: ReleasedEnvironments[releasedEnvironmentCount].dependencies[dependencyCount],      // Creates a connection between the current environment
                         target: ReleasedEnvironments[releasedEnvironmentCount].name,                               // and the environments that it depends upon
@@ -122,17 +161,6 @@ function ConnectNodes() {
 
 }
 
-/*function RemovePreAndPostAprrovalInformation(EnvironmentId)
-{
-    for (var environment in ReleasedEnvironments) {
-        if (EnvironmentId == ReleasedEnvironments[environment].id) {
-            preapproval_list = preapproval_list.splice(0, preapproval_list.length);
-            postapproval_list = preapproval_list.splice(0, preapproval_list.length);
-        }
-    }
-
-}
-*/
 VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
     VSS.ready(function () {
@@ -150,11 +178,11 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 var dependencies = new Array();                 //Contains dependencies of current environment
                 var preApprovalStatus = 'notStarted';
                 var postApprovalStatus = 'notStarted';
-
+                var environmentName = (env.name).replace(/\s+/g, '');
                 var dependencyIndex = 0;
                 var dependencyCount = 0;
                 levelOfEnvironment = 0;                                      // Initializing level to 0 
-
+                
                 //Calculating Level of current Environment and storing Dependencies
 
                 while (dependencyCount < env.conditions.length) {
@@ -165,7 +193,6 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                     else
                         CalculateLevel(dependencies[dependencyIndex]);
-
 
                     dependencyIndex++;
                     dependencyCount++;
@@ -184,38 +211,34 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 var countOFApprovers = 0;
                 var preapproval_list = new Array();                      //List of preApprovers of current Environment
                 var postapproval_list = new Array();                     //List of postApprovers of current Environment
+                var preApprovalsSnapshot = env.preApprovalsSnapshot.approvals;
+                var postApprovalsSnapshot = env.postApprovalsSnapshot.approvals;
 
                 //Storing List of PreApprovers
-                while (countOFApprovers < env.preApprovalsSnapshot.approvals.length && env.preApprovalsSnapshot.approvals[0].isAutomated == false) {
-
-                    preapproval_list[countOFApprovers] = env.preApprovalsSnapshot.approvals[countOFApprovers].approver.displayName;
+                while (preApprovalsSnapshot[0].isAutomated == false && countOFApprovers < preApprovalsSnapshot.length ) {
+                    preapproval_list[countOFApprovers] = preApprovalsSnapshot[countOFApprovers].approver.displayName;
                     countOFApprovers++;
-
                 }
 
                 countOFApprovers = 0;
 
                 //Storing List of PostApprovers
-                while (countOFApprovers < env.postApprovalsSnapshot.approvals.length && env.postApprovalsSnapshot.approvals[0].isAutomated == false) {
-
-                    postapproval_list[countOFApprovers] = env.postApprovalsSnapshot.approvals[countOFApprovers].approver.displayName;
+                while (postApprovalsSnapshot[0].isAutomated == false && countOFApprovers < postApprovalsSnapshot.length) {
+                    postapproval_list[countOFApprovers] = postApprovalsSnapshot[countOFApprovers].approver.displayName;
                     countOFApprovers++;
                 }
 
                 //Current Status of the Environment
                 switch (env.status) {
-                    case RM_Contracts.EnvironmentStatus.Undefined:
-                        state += 'Unknown';
-                        break;
-                    case RM_Contracts.EnvironmentStatus.NotStarted:
-                        state += 'Not Started';
-                        status = 'notStarted';
-                        break;
                     case RM_Contracts.EnvironmentStatus.InProgress:
                         state += 'In Progress';
                         status = 'running';
-
                         break;
+                    case RM_Contracts.EnvironmentStatus.Queued:
+                        state += 'Queued';
+                        status = 'pending';
+                        break;
+
                     case RM_Contracts.EnvironmentStatus.Succeeded:
                         state += 'Succeeded';
                         status = 'succeeded';
@@ -224,21 +247,23 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         state += 'Rejected';
                         status = 'failed';
                         break;
-
-                    case RM_Contracts.EnvironmentStatus.Canceled:
+                   case RM_Contracts.EnvironmentStatus.Canceled:
                         state += 'Cancelled';
                         status = 'failed';
+                        break;              
+                    case RM_Contracts.EnvironmentStatus.NotStarted:
+                        state += 'Not Started';
+                        status = 'notStarted';
                         break;
-                    case RM_Contracts.EnvironmentStatus.Queued:
-                        state += 'Queued';
-                        status = 'pending';
+                  
+                    case RM_Contracts.EnvironmentStatus.Undefined:
+                        state += 'Unknown';
                         break;
 
                     case RM_Contracts.EnvironmentStatus.Scheduled:
                         state += 'Scheduled';
                         status = 'scheduled';
                         break;
-
                     default:
                         state += 'Unknown';
                 };
@@ -246,72 +271,73 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                 var preApprovalNodeId = "pre" + env.id;
                 var postApprovalNodeId = "pos" + env.id;
 
-                try {
+
+                //Determine the status of PreApproval
+               
                     if (preapproval_list.length != 0) {
                         var ApprovalsNotReceived = 0;
+                        var preDeployApprovals = env.preDeployApprovals;
+                        var preDeployApprovalsLength = preDeployApprovals.length - 1;
+                        if (preDeployApprovals.length != 0 && env.status != RM_Contracts.EnvironmentStatus.Queued) {
 
-                        if (env.preDeployApprovals.length != 0) {
+                            var latestAttempt = preDeployApprovals[preDeployApprovalsLength].attempt;
                             for (var preDeployApprover in env.preDeployApprovals) {
-                                if (typeof env.preDeployApprovals[preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-                                    ApprovalsNotReceived++;
+                                if (preDeployApprovals[preDeployApprovalsLength - preDeployApprover].attempt == latestAttempt) {
+                                    if (typeof preDeployApprovals[preDeployApprovalsLength - preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                    {
+                                        ApprovalsNotReceived++;
+                                    }
+                                }
+                                else
+                                    break;
                             }
-
-                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preDeployApprovals.length) {
+                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preApprovalsSnapshot.approvals.length)
                                 preApprovalStatus = 'succeeded';
+                            else {
+                                if (ApprovalsNotReceived > 0) {
+                                    preApprovalStatus = 'notStarted';
+                                    if (status != 'failed')
+                                        status = 'pending';
+                                }
+                                else
+                                    preApprovalStatus = 'succeeded';
                             }
-                            else if (ApprovalsNotReceived > 0) {
-                                preApprovalStatus = 'notStarted';
-                                status = 'notStarted';
-                            }
-                            else
-                                preApprovalStatus = 'succeeded';
-
                         }
-                        else {
+                        else
                             preApprovalStatus = 'notStarted';
-                            status = 'notStarted';
-                        }
-
                     }
+                
+               
+                //Determine the status of PreApproval
 
-                }
-                catch (e) {
-                    preApprovalStatus = 'notStarted';
-                }
-
-
-                try {
+                
                     if (postapproval_list.length != 0) {
                         var ApprovalsNotReceived = 0;
+                        var postDeployApprovals = env.postDeployApprovals;
+                        var postDeployApprovalsLength = postDeployApprovals.length - 1;
+                        if (postDeployApprovals.length != 0) {
 
-                        if (env.postDeployApprovals.length != 0) {
-                            for (var postDeployApprover in env.postDeployApprovals) {
-                                if (typeof env.postDeployApprovals[postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-                                    ApprovalsNotReceived++;
+                            var latestAttempt = postDeployApprovals[postDeployApprovalsLength].attempt;
+                            for (var postDeployApprover in postDeployApprovals) {
+                                if (typeof postDeployApprovals[postDeployApprovalsLength- postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
+                                {
+                                    if (postDeployApprovals[postDeployApprovalsLength - postDeployApprover].attempt == latestAttempt)
+                                        ApprovalsNotReceived++;
+                                    else
+                                        break;
+                                }
                             }
-
-                            if (env.postApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.postDeployApprovals.length)
+                            if (env.postApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.postApprovalsSnapshot.approvals.length)
                                 postApprovalStatus = 'succeeded';
-
                             else if (ApprovalsNotReceived > 0)
                                 postApprovalStatus = 'notStarted';
-
                             else
                                 postApprovalStatus = 'succeeded';
-
                         }
                         else
                             postApprovalStatus = 'notStarted';
-
                     }
-
-                }
-                catch (e) {
-                    postApprovalStatus = 'notStarted';
-                }
-
-
-
+               
                 //Creating Node for preApproval
                 var preApprovalNode = $('<div/>', {
                     id: preApprovalNodeId,
@@ -335,38 +361,46 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                 //Creating a container that stores all the above three nodes
                 var current = $('<div/>', {
-                    id: (env.name).replace(/\s+/g, ''),
+                    id: environmentName,
                     class: 'container '
 
                 });
 
                 $('#environments').append(current);
-
+                var doc = document;
                 try {
-                    if (env.preApprovalsSnapshot.approvals[0].isAutomated == false)
-                        $('#' + env.name.replace(/\s+/g, '')).append(preApprovalNode);
+                    if (env.preApprovalsSnapshot.approvals[0].isAutomated == false) {
+                        $('#' + environmentName).append(preApprovalNode);
+                        doc.getElementById(environmentName).style.borderTopLeftRadius = "10px 10px";
+                        doc.getElementById(environmentName).style.borderBottomLeftRadius = "10px 10px";
+                    }
+
                 }
                 catch (e) {
                     alert('excep_pre' + env.name);
                 }
 
                 try {
-                    $('#' + env.name.replace(/\s+/g, '')).append(EnvNode);
+                    $('#' + environmentName).append(EnvNode);
                 }
                 catch (e) {
                     alert('excep_envnode' + env.name);
                 }
 
                 try {
-                    if (env.postApprovalsSnapshot.approvals[0].isAutomated == false)
-                        $('#' + env.name.replace(/\s+/g, '')).append(postApprovalNode);
+                    if (env.postApprovalsSnapshot.approvals[0].isAutomated == false) {
+                        doc.getElementById(env.id).style.marginRight = "2px";
+                        $('#' + environmentName).append(postApprovalNode);
+                        doc.getElementById(environmentName).style.borderTopRightRadius = "10px 10px";
+                        doc.getElementById(environmentName).style.borderBottomRightRadius = "10px 10px";
+                    }
                 }
                 catch (e) {
                     alert('excep_post' + env.name);
                 }
 
                 //Creating the Object of current Environment
-                const releasedEnvironmentObject = new releasedEnvironment((env.name).replace(/\s+/g, ''), env.id, dependencies, preapproval_list, postapproval_list, levelOfEnvironment);
+                const releasedEnvironmentObject = new releasedEnvironment(environmentName, env.id, dependencies, preapproval_list, postapproval_list, levelOfEnvironment);
 
                 ReleasedEnvironments[totalNoOfReleasedEnvironments] = releasedEnvironmentObject;
 
@@ -384,97 +418,20 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
             DrawGraph();
 
             //Context menu popup on right-clicking on the container 
+
             $(function () {
                 var EnvironmentId = [0];
                 $('.environment').contextPopup({
 
                     items: [
                       {
-                          label: 'Deploy', action: function () {
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
-
-                                        environmentUpdateData.comment = "Deploying";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-
-
-                          }
+                          label: 'Deploy', icon: 'images/icon-rm-environment-deploy.png', action: function () { ContextMenuOptions('Deploy', release.id, EnvironmentId[0]); }
                       },
                       {
-                          label: 'Cancel', action: function () {
-
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.Canceled;
-
-                                        environmentUpdateData.comment = "Cancelling";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                            RemovePreAndPostAprrovalInformation(EnvironmentId[0]);
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-                          }
+                          label: 'Cancel', icon: 'images/icon-rm-environment-cancel.png', action: function () { ContextMenuOptions('Cancel', release.id, EnvironmentId[0]); }
                       },
                       {
-                          label: 'Re-Deploy', action: function () {
-                              "use strict";
-
-                              VSS.require(["VSS/Controls", "VSS/Service", "ReleaseManagement/Core/RestClient", "ReleaseManagement/Core/Contracts"],
-                                function (Controls, VSS_Service, RM_WebApi, RM_InnerContracts) {
-                                    var vsoContext = VSS.getWebContext();
-                                    var rmClient = VSS_Service.getCollectionClient(RM_WebApi.ReleaseHttpClient);
-                                    rmClient.getReleaseEnvironment(vsoContext.project.id, release.id, EnvironmentId[0]).then(function (Environment) {
-
-                                        var environmentUpdateData = RM_InnerContracts.TypeInfo.ReleaseEnvironmentUpdateMetadata;
-                                        environmentUpdateData.status = RM_InnerContracts.EnvironmentStatus.InProgress;
-                                        environmentUpdateData.comment = "Re-Deploying";
-                                        rmClient.updateReleaseEnvironment(environmentUpdateData, vsoContext.project.id, release.id, EnvironmentId[0]).then(() => {
-                                        }, function (error) {
-                                            alert("error");
-                                        });
-
-
-
-                                    }, function (error) {
-                                        alert("error");
-                                    });
-                                });
-
-
-
-
-
-                          }
+                          label: 'Re-Deploy', icon: 'images/icon-rm-environment-redeploy.png', action: function () { ContextMenuOptions('Re-Deploy', release.id, EnvironmentId[0]); }
                       }
                     ]
                 }, EnvironmentId);
@@ -484,75 +441,54 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
 
             //Hover Function
-            $('.environment').hover(function () {
+            $('.environment').hover(function (e) {
                 for (var releasedEnvironmentIndex in ReleasedEnvironments) {
                     var releasedEnvironment = ReleasedEnvironments[releasedEnvironmentIndex];
 
                     var EnvironmentInformation = "Environment: ";
 
                     if (releasedEnvironment.id == this.id) {
-                        EnvironmentInformation = EnvironmentInformation + releasedEnvironment.name + "<br>" + "PreApprover: ";
+                        EnvironmentInformation += releasedEnvironment.name + "<br>" + "PreApprover: ";
                         if (releasedEnvironment.preapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.preapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver] + " ";
+                                EnvironmentInformation += releasedEnvironment.preapproval_list[approver];
+                                if (approver != releasedEnvironment.preapproval_list.length - 1)
+                                    EnvironmentInformation += ', ';
                             }
                         }
 
-                        EnvironmentInformation = EnvironmentInformation + "<br>" + "PostApprover: ";
+                        EnvironmentInformation += "<br>" + "PostApprover: ";
 
                         if (releasedEnvironment.postapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.postapproval_list) {
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver] + " ";
+                                EnvironmentInformation += releasedEnvironment.postapproval_list[approver];
+                                if (approver != releasedEnvironment.postapproval_list.length - 1)
+                                    EnvironmentInformation += ', ';
                             }
                         }
-                        EnvironmentInformation = EnvironmentInformation + "<br>";
+                        EnvironmentInformation += "<br>";
 
-                        EnvironmentInformation = EnvironmentInformation + "Release: " + release_name + "<br>";
+                        EnvironmentInformation += "Release: " + release_name + "<br>";
                         document.getElementById('details').innerHTML = EnvironmentInformation;
-                        var offset = $("#" + this.id).offset();
-                        $("#details").offset({ top: offset.top + 10, left: offset.left });
+
+                        var left = e.pageX + 5, /* nudge to the right, so the pointer is covering the title */
+                         top = e.pageY;
+                        if (top + $("#details").height() >= $(window).height()) {
+                            top -= $("#details").height();
+                        }
+                        if (left + $("#details").width() >= $(window).width()) {
+                            left -= $("#details").width();
+                        }
+                        // Create and show menu
+                        $("#details").css({ zIndex: 1000001, left: left, top: top, padding: "5px", display: "inline-block" });
                         break;
                     }
                 }
             },
               function () {
+                  $("#details").css({ display: "none" });
                   document.getElementById('details').innerHTML = " ";
               });
-
-            $('.container').click(function (event) {
-                if (event.target != this) {
-                    for (var releasedEnvironmentIndex in ReleasedEnvironments) {
-                        var releasedEnvironment = ReleasedEnvironments[releasedEnvironmentIndex];
-
-                        if ((event.target.id == "pre" + releasedEnvironment.id) || (event.target.id == "pos" + releasedEnvironment.id)) {
-
-                            if (event.target.id[1] == 'r') {
-                                $('.preApproval').contextPopup({
-                                    items: [
-                                      { label: 'Approve', action: function () { alert('Approved') } },
-                                      { label: 'Cancel', action: function () { alert('Cancelled') } },
-                                      { label: 'Reassign', action: function () { alert('Reassigned') } }
-                                    ]
-                                });
-                            }
-                            else {
-                                $('.postApproval').contextPopup({
-                                    items: [
-                                      { label: 'Approve', action: function () { alert('Approved') } },
-                                      { label: 'Cancel', action: function () { alert('Cancelled') } },
-                                      { label: 'Reassign', action: function () { alert('Reassigned') } }
-                                    ]
-                                });
-                            }
-                        }
-                    }
-
-                }
-                else {
-                    alert('You actually clicked #container itself.');
-                }
-            });
-
 
             ConnectNodes();           //Connecting nodes using Jsplumb connect function
 
