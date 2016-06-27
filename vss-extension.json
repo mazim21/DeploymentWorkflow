@@ -2,9 +2,9 @@
   "manifestVersion": 1,
   "id": "Deployment-WorkFlow",
   "version": "0.1.8",
-  "name": "RM deployment status - summary",
+  "name": "RM Deployment Workflow",
   "description": "RM summary section extension",
-  "publisher": "t-moazim",
+  "publisher": "anumitashenoy",
   "public":  false,
   "links": {
     "learn": {
@@ -12,12 +12,17 @@
     }
   },
   "icons": {
-        "default": "images/workflowIcon.jpg"
-    },
+    "default": "images/workflowIcon.jpg"
+  },
   "content": {
-        "details": {
-            "path": "overview.md"
-        }
+    "details": {
+      "path": "overview.md"
+    }
+
+  },
+  "branding": {
+        "color": "#5C2D91",
+        "theme": "dark"
     },
   "targets": [
     {
@@ -26,23 +31,15 @@
   ],
   "contributions": [
     {
-     "id": "rm-summary-section-space", 
+      "id": "deploymentsummaryspace",
       "type": "ms.vss-releaseManagement-web.release-summary-section",
       "targets": [ "ms.vss-releaseManagement-web.release-details-summary-tab" ],
       "properties": {
         "name": "Deployment Status",
         "uri": "index.html",
-        "order": "99"
-      }
-    },
-    {
-      "id": "rm-tab-space", 
-      "type": "ms.vss-releaseManagement-web.release-summary-tab",
-      "targets": [ "ms.vss-releaseManagement-web.release-details-view" ],
-      "properties": {
-        "name": "Deployment Status",
-        "uri": "index.html",
-        "order": "99"
+        "order": "99",
+
+        "height":  "800px"
       }
     }
   ],
@@ -53,9 +50,10 @@
     	{
       		"path": "images/Changeworkflow.png"
     	},
-    	{
-      		"path": "images/info.png"
-    	}
+    {
+      "path": "images/info.png"
+    }
+
     ],	
   "files": [
     {
@@ -79,10 +77,24 @@
     },
     {
         "path": "images/Changeworkflow.png", "addressable": true
-    }, 
+    },
     {
-        "path": "images/info.png", "addressable": true
+      "path": "images/info.png",
+      "addressable": true
+    },
+    {
+      "path": "images/icon-rm-environment-deploy.png",
+      "addressable": true
+    },
+    {
+      "path": "images/icon-rm-environment-cancel.png",
+      "addressable": true
+    },
+    {
+      "path": "images/icon-rm-environment-redeploy.png",
+      "addressable": true
     }
+
   ]
 }
 
