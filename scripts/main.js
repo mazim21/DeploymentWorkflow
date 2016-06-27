@@ -282,19 +282,10 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         var preDeployApprovalsLength = preDeployApprovals.length - 1;
                         if (preDeployApprovals.length != 0 && env.status != RM_Contracts.EnvironmentStatus.Queued) {
 
-<<<<<<< HEAD
                             var latestAttempt = preDeployApprovals[preDeployApprovalsLength].attempt;
                             for (var preDeployApprover in env.preDeployApprovals) {
                                 if (preDeployApprovals[preDeployApprovalsLength - preDeployApprover].attempt == latestAttempt) {
-                                    if (typeof preDeployApprovals[preDeployApprovalsLength - preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-=======
-                        if (env.preDeployApprovals.length != 0 && env.status != RM_Contracts.EnvironmentStatus.Queued) {
-                            var latestAttempt = env.preDeployApprovals[env.preDeployApprovals.length - 1].attempt;
-
-                            for (var preDeployApprover in env.preDeployApprovals) {
-                                if (env.preDeployApprovals[env.preDeployApprovals.length - 1 - preDeployApprover].attempt == latestAttempt) {
-                                    if (typeof env.preDeployApprovals[env.preDeployApprovals.length - 1 - preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
+                                   if (typeof env.preDeployApprovals[env.preDeployApprovals.length - 1 - preDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
                                     {
                                         ApprovalsNotReceived++;
                                     }
@@ -302,13 +293,9 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                                 else
                                     break;
                             }
-<<<<<<< HEAD
-                            if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preApprovalsSnapshot.approvals.length)
-=======
-
                             if (env.preApprovalsSnapshot.approvalOptions.requiredApproverCount == 1 && ApprovalsNotReceived != env.preApprovalsSnapshot.approvals.length) {
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
                                 preApprovalStatus = 'succeeded';
+                            }
                             else {
                                 if (ApprovalsNotReceived > 0) {
                                     preApprovalStatus = 'notStarted';
@@ -318,26 +305,10 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                                 else
                                     preApprovalStatus = 'succeeded';
                             }
-<<<<<<< HEAD
                         }
                         else
                             preApprovalStatus = 'notStarted';
-=======
-                            else {
-                                if (ApprovalsNotReceived > 0) {
-                                    preApprovalStatus = 'notStarted';
-                                    if (status != 'failed')
-                                        status = 'pending';
-                                }
-                                else
-                                    preApprovalStatus = 'succeeded';
-                            }
-
-                        }
-                        else
-                            preApprovalStatus = 'notStarted';
-
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
+                         
                     }
                 
                
@@ -348,7 +319,6 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
 
                         var ApprovalsNotReceived = 0;
-<<<<<<< HEAD
                         var postDeployApprovals = env.postDeployApprovals;
                         var postDeployApprovalsLength = postDeployApprovals.length - 1;
                         if (postDeployApprovals.length != 0) {
@@ -358,17 +328,8 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                                 if (typeof postDeployApprovals[postDeployApprovalsLength- postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
                                 {
                                     if (postDeployApprovals[postDeployApprovalsLength - postDeployApprover].attempt == latestAttempt)
-=======
 
-                        if (env.postDeployApprovals.length != 0) {
-                            var latestAttempt = env.postDeployApprovals[env.postDeployApprovals.length - 1].attempt;
-
-                            for (var postDeployApprover in env.postDeployApprovals) {
-                                if (typeof env.postDeployApprovals[env.postDeployApprovals.length - 1 - postDeployApprover].approvedBy == "undefined")              //hasn't been approved yet
-                                {
-                                    if (env.postDeployApprovals[env.postDeployApprovals.length - 1 - postDeployApprover].attempt == latestAttempt)
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
-                                        ApprovalsNotReceived++;
+                                             ApprovalsNotReceived++;
                                     else
                                         break;
                                 }
@@ -471,23 +432,13 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                     items: [
                       {
-<<<<<<< HEAD
                           label: 'Deploy', icon: 'images/icon-rm-environment-deploy.png', action: function () { ContextMenuOptions('Deploy', release.id, EnvironmentId[0]); }
                       },
                       {
                           label: 'Cancel', icon: 'images/icon-rm-environment-cancel.png', action: function () { ContextMenuOptions('Cancel', release.id, EnvironmentId[0]); }
                       },
                       {
-                          label: 'Re-Deploy', icon: 'images/icon-rm-environment-redeploy.png', action: function () { ContextMenuOptions('Re-Deploy', release.id, EnvironmentId[0]); }
-=======
-                          label: 'Deploy', action: function () { ContextMenuOptions('Deploy', release.id, EnvironmentId[0]); }
-                      },
-                      {
-                          label: 'Cancel', action: function () { ContextMenuOptions('Cancel', release.id, EnvironmentId[0]); }
-                      },
-                      {
-                          label: 'Re-Deploy', action: function () { ContextMenuOptions('Re-Deploy', release.id, EnvironmentId[0]); }
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
+                          label: 'Re-Deploy', icon: 'images/icon-rm-environment-redeploy.png', action: function () { ContextMenuOptions('Re-Deploy', release.id, EnvironmentId[0]); }                       
                       }
                     ]
                 }, EnvironmentId);
@@ -507,11 +458,7 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         EnvironmentInformation += releasedEnvironment.name + "<br>" + "PreApprover: ";
                         if (releasedEnvironment.preapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.preapproval_list) {
-<<<<<<< HEAD
                                 EnvironmentInformation += releasedEnvironment.preapproval_list[approver];
-=======
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.preapproval_list[approver];
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
                                 if (approver != releasedEnvironment.preapproval_list.length - 1)
                                     EnvironmentInformation += ', ';
                             }
@@ -521,11 +468,8 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
 
                         if (releasedEnvironment.postapproval_list.length != 0) {
                             for (var approver in releasedEnvironment.postapproval_list) {
-<<<<<<< HEAD
                                 EnvironmentInformation += releasedEnvironment.postapproval_list[approver];
-=======
-                                EnvironmentInformation = EnvironmentInformation + releasedEnvironment.postapproval_list[approver];
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
+
                                 if (approver != releasedEnvironment.postapproval_list.length - 1)
                                     EnvironmentInformation += ', ';
                             }
@@ -545,10 +489,6 @@ VSS.require(["ReleaseManagement/Core/Contracts"], function (RM_Contracts) {
                         }
                         // Create and show menu
                         $("#details").css({ zIndex: 1000001, left: left, top: top, padding: "5px", display: "inline-block" });
-<<<<<<< HEAD
-=======
-
->>>>>>> 0f3b14adbb6143d9eec33e477496e5e726f2d444
                         break;
                     }
                 }
